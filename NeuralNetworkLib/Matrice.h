@@ -1,4 +1,5 @@
 #pragma once
+#include "stdafx.h"
 
 class Matrice
 {
@@ -18,19 +19,20 @@ public:
 	void Add(size_t i, size_t j, float value);
 
 	void Dot(const Matrice & m, Matrice& ret) const;
-	Matrice * Dot(const Matrice & m) const;
+	Matrice Dot(const Matrice & m) const;
 
 	void Hadamard(const Matrice & m);
 
 	void Apply(float(*fct)(float current));
-	Matrice * Transposed() const;
+	Matrice Transposed() const;
 	const int GetWidth() const;
 	const int GetHeight() const;
 
 	void operator+=(const Matrice & m);
 	void operator-=(const Matrice & m);
-	Matrice * operator*(const float f) const;
+	Matrice operator*(const float f) const;
 	void operator=(const Matrice & m);
+	float* operator[] (int i) const;
 
 	friend std::ostream & operator << (std::ostream &out, const Matrice & mat);
 };

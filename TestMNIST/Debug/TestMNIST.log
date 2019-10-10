@@ -1,0 +1,4 @@
+﻿  TestMNIST.cpp
+d:\onedrive\documents\projects\c++\neuralnetworklib\testmnist\testmnist.cpp(17): warning C4244: 'argument' : conversion de 'time_t' en 'unsigned int', perte possible de données
+d:\onedrive\documents\projects\c++\neuralnetworklib\testmnist\testmnist.cpp(54): warning C4102: 'std' : étiquette non référencée
+  TestMNIST.vcxproj -> D:\OneDrive\Documents\Projects\C++\NeuralNetworkLib\Debug\TestMNIST.exe

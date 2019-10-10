@@ -81,10 +81,10 @@ void Matrice::Dot(const Matrice & m, Matrice & ret) const
 		}
 	}
 }
-Matrice * Matrice::Dot(const Matrice & m) const
+Matrice Matrice::Dot(const Matrice & m) const
 {
-	Matrice * ret = new Matrice(m.GetWidth(), this->GetHeight());
-	this->Dot(m, *ret);
+	Matrice ret(m.GetWidth(), this->GetHeight());
+	this->Dot(m, ret);
 
 	return ret;
 }
@@ -112,14 +112,14 @@ void Matrice::Apply(float(*fct)(float current))
 	}
 }
 
-Matrice * Matrice::Transposed() const
+Matrice Matrice::Transposed() const
 {
-	Matrice* mat = new Matrice(this->GetHeight(), this->GetWidth());
+	Matrice mat(this->GetHeight(), this->GetWidth());
 	for (size_t i = 0; i < this->GetHeight(); i++)
 	{
 		for (size_t j = 0; j < this->GetWidth(); j++)
 		{
-			mat->Set(j, i, this->Get(i, j));
+			mat.Set(j, i, this->Get(i, j));
 		}
 	}
 	return mat;
@@ -157,12 +157,12 @@ void Matrice::operator-=(const Matrice & m)
 	}
 }
 
-Matrice * Matrice::operator*(const float f) const
+Matrice Matrice::operator*(const float f) const
 {
-	Matrice * ret = new Matrice(*this);
+	Matrice ret(*this);
 	for (size_t i = 0; i < this->GetHeight() * this->GetWidth(); i++)
 	{
-		ret->mat_[i] *= f;
+		ret.mat_[i] *= f;
 	}
 	return ret;
 }
@@ -177,6 +177,11 @@ void Matrice::operator=(const Matrice & m)
 	{
 		this->mat_[i] = m.mat_[i];
 	}
+}
+
+float * Matrice::operator[](int i) const
+{
+	return this->mat_ + (i * this->GetWidth());
 }
 
 std::ostream & operator<<(std::ostream & out, const Matrice & mat)

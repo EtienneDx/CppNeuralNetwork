@@ -3,7 +3,7 @@
 
 Network::Network(int inputCount, 
 	float(*error)(const Matrice &output, const Matrice &expected), 
-	Matrice *(*errorDerivative)(const Matrice &output, const Matrice &expected)) :
+	Matrice (*errorDerivative)(const Matrice &output, const Matrice &expected)) :
 	inputLayer_(inputCount), error_(error), derivedError_(errorDerivative)
 {
 }
@@ -43,16 +43,38 @@ float Network::Train(float * input, float * expected, float train_speed)
 {
 	this->inputLayer_.Input(input);
 	this->outputLayer_->FeedForward();
-	Matrice * expectedMat = new Matrice(this->outputLayer_->GetNeurons().GetWidth(), expected);
-	float err = (*this->error_)(this->outputLayer_->GetNeurons(), *expectedMat);
+	Matrice expectedMat(this->outputLayer_->GetNeurons().GetWidth(), expected);
+	float err = (*this->error_)(this->outputLayer_->GetNeurons(), expectedMat);
 
-	Matrice * mat_err = (*this->derivedError_)(this->outputLayer_->GetNeurons(), *expectedMat);
-	//std::cout << *mat_err << std::endl;
-	delete expectedMat;
-	//std::cout << *this->outputLayer_->GetWeights() << std::endl << *((HiddenLayer*)(this->outputLayer_->GetPreviousLayer()))->GetWeights() << std::endl;
+	Matrice mat_err = (*this->derivedError_)(this->outputLayer_->GetNeurons(), expectedMat);
+
 	this->outputLayer_->Train(mat_err, train_speed);
 
-	delete mat_err;
-
 	return err;
+}
+
+float Network::Train(std::vector<TrainData*> data, int mini_batch_size, float train_speed)
+{
+	float err = 0;
+
+	for (size_t i = 0; i < data.size(); i++)
+	{
+		this->inputLayer_.Input(data[i]->GetInput());
+		this->outputLayer_->FeedForward();
+
+		Matrice expectedMat(this->outputLayer_->GetNeurons().GetWidth(), data[i]->GetOutput());
+		err += (*this->error_)(this->outputLayer_->GetNeurons(), expectedMat);
+
+		Matrice mat_err = (*this->derivedError_)(this->outputLayer_->GetNeurons(), expectedMat);
+
+		this->outputLayer_->CalculateDelta(mat_err);
+
+		if ((i + 1) % mini_batch_size == 0)// avoid first mini-batch containing a lonely element
+		{
+			this->outputLayer_->ApplyDelta(train_speed);
+		}
+	}
+	this->outputLayer_->ApplyDelta(train_speed);// last items go together in a mini-mini-batch
+
+	return err / data.size();
 }

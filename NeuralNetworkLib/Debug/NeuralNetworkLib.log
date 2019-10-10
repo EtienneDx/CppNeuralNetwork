@@ -1,2 +1,7 @@
 ﻿  HiddenLayer.cpp
+d:\onedrive\documents\projects\c++\neuralnetworklib\neuralnetworklib\hiddenlayer.cpp(112): warning C4018: '<' : incompatibilité signed/unsigned
+d:\onedrive\documents\projects\c++\neuralnetworklib\neuralnetworklib\hiddenlayer.cpp(114): warning C4018: '<' : incompatibilité signed/unsigned
+d:\onedrive\documents\projects\c++\neuralnetworklib\neuralnetworklib\hiddenlayer.cpp(120): warning C4018: '<' : incompatibilité signed/unsigned
+  Network.cpp
+  Génération de code en cours...
   NeuralNetworkLib.vcxproj -> D:\OneDrive\Documents\Projects\C++\NeuralNetworkLib\Debug\NeuralNetworkLib.lib

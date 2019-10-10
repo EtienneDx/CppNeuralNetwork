@@ -5,14 +5,15 @@
 
 
 HiddenLayer::HiddenLayer(int neuronCount, float(*activation)(float), float(*derived_activation)(float)) :
-	Layer(neuronCount), weights_(nullptr), 
-	activation_(activation), derived_activation_(derived_activation), bias_(neuronCount, 1, true), preActivationNeurons_(neuronCount, 1)
+	Layer(neuronCount), weights_(nullptr), deltas_(nullptr),
+	activation_(activation), derived_activation_(derived_activation), bias_(neuronCount, 1, true), deltaBias_(neuronCount, 1), preActivationNeurons_(neuronCount, 1)
 {
 }
 
 HiddenLayer::~HiddenLayer()
 {
 	delete this->weights_;
+	delete this->deltas_;
 }
 
 void HiddenLayer::SetPreviousLayer(Layer * layer)
@@ -21,6 +22,7 @@ void HiddenLayer::SetPreviousLayer(Layer * layer)
 	if (this->GetWeights() == nullptr)
 	{
 		this->weights_ = new Matrice(this->GetNeurons().GetWidth(), layer->GetNeurons().GetWidth(), true);
+		this->deltas_ = new Matrice(this->GetNeurons().GetWidth(), layer->GetNeurons().GetWidth());
 	}
 }
 
@@ -49,43 +51,76 @@ Matrice * HiddenLayer::GetWeights()
 	return this->weights_;
 }
 
-void HiddenLayer::Train(Matrice * dE_dY, float trainSpeed)
+void HiddenLayer::Train(Matrice dE_dY, float trainSpeed)
 {
 	//std::cout << *dE_dY << std::endl;
-	//dE_dY *= (*this->derived_activation_)(this->GetNeurons());
-	Matrice * d_acti_neurons = new Matrice(this->GetPreActivationNeurons());
-	d_acti_neurons->Apply(this->derived_activation_);
-	dE_dY->Hadamard(*d_acti_neurons);
-	delete d_acti_neurons;
+	Matrice d_acti_neurons(this->GetPreActivationNeurons());
+	d_acti_neurons.Apply(this->derived_activation_);
+	dE_dY.Hadamard(d_acti_neurons);
 	//std::cout << "dE/dY : " << *dE_dY << std::endl;
 
-	Matrice * transWeight = this->GetWeights()->Transposed();
-	Matrice * dE_dX = dE_dY->Dot(*transWeight);// dE/dX is the error at the output of the previous layer
-	delete transWeight;
+	Matrice dE_dX = dE_dY.Dot(this->GetWeights()->Transposed());// dE/dX is the error at the output of the previous layer
 
-	Matrice * transNeurons = this->GetPreviousLayer()->GetNeurons().Transposed();
 	//std::cout << "trans neurons : " << *transNeurons << std::endl;
-	Matrice * dE_dW = transNeurons->Dot(*dE_dY);
+	Matrice dE_dW = this->GetPreviousLayer()->GetNeurons().Transposed().Dot(dE_dY);
 	//std::cout << "dE/dW : " << *dE_dW << std::endl;
-	delete transNeurons;
 
-	Matrice * dBias = (*dE_dY * trainSpeed);
-	this->bias_ += *dBias;
-	delete dBias;
+	this->bias_ -= dE_dY * trainSpeed;
 
-	Matrice * dWeight = (*dE_dW * trainSpeed);
-	//std::cout << *dE_dY << std::endl << *dE_dW << std::endl;
-	*this->weights_ += *dWeight;
-	delete dWeight;
-
-	delete dE_dW;
+	//std::cout << *dWeight << std::endl;
+	*this->weights_ -= dE_dW * trainSpeed;
 
 	if (HiddenLayer* v = dynamic_cast<HiddenLayer*>(this->GetPreviousLayer()))
 	{
 		v->Train(dE_dX, trainSpeed);
 	}
+}
 
-	delete dE_dX;
+void HiddenLayer::CalculateDelta(Matrice dE_dY)
+{
+	Matrice d_acti_neurons(this->GetPreActivationNeurons());
+	d_acti_neurons.Apply(this->derived_activation_);
+	dE_dY.Hadamard(d_acti_neurons);
+
+	Matrice dE_dX = dE_dY.Dot(this->GetWeights()->Transposed());// dE/dX is the error at the output of the previous layer
+
+	Matrice dE_dW = this->GetPreviousLayer()->GetNeurons().Transposed().Dot(dE_dY);
+
+	this->deltaBias_ += dE_dY;
+
+	*this->deltas_ += dE_dW;
+
+	if (HiddenLayer* v = dynamic_cast<HiddenLayer*>(this->GetPreviousLayer()))
+	{
+		v->CalculateDelta(dE_dX);
+	}
+}
+
+
+
+void HiddenLayer::ApplyDelta(float trainSpeed)
+{
+	*this->weights_ -= *this->deltas_ * trainSpeed;
+	this->bias_ -= this->deltaBias_ * trainSpeed;
+
+	if (HiddenLayer* v = dynamic_cast<HiddenLayer*>(this->GetPreviousLayer()))
+	{
+		v->ApplyDelta(trainSpeed);
+	}
+
+	// reset deltas
+	for (size_t i = 0; i < this->deltas_->GetHeight(); i++)
+	{
+		for (size_t j = 0; j < this->deltas_->GetWidth(); j++)
+		{
+			this->deltas_->Set(i, j);
+		}
+	}
+
+	for (size_t i = 0; i < this->bias_.GetWidth(); i++)
+	{
+		this->bias_.Set(0, i);
+	}
 }
 
 const Matrice & HiddenLayer::GetPreActivationNeurons() const
